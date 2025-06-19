@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identifikasi Varietas Jagung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        #cameraView {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+        }
+        #cameraPreview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Logo -->
+    <div class="fixed top-4 left-4 z-50">
+        <img src="/static/uploads/Logo UB.png" alt="Logo" class="h-12 w-auto hover:scale-105 transition-transform duration-200">
+    </div>
+
+    <main class="flex-grow container mx-auto px-4 py-6 md:py-10">
+        <!-- Header Section -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2 bg-gradient-to-r from-green-600 to-yellow-500 bg-clip-text text-transparent">
+                <i class="fas fa-seedling mr-2"></i> Identifikasi Varietas Benih Jagung
+            </h1>
+            <p class="text-base md:text-lg text-gray-600">Unggah atau ambil gambar benih jagung untuk identifikasi</p>
+        </header>
+
+        <!-- Form Upload -->
+        <form id="uploadForm" class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6 space-y-6">
+            <div class="flex flex-col items-center">
+                <!-- Tombol Galeri -->
+                <label id="galleryButton" class="w-full flex flex-col items-center px-4 py-6 bg-blue-50 text-blue-700 rounded-lg shadow tracking-wide uppercase border border-blue-300 cursor-pointer hover:bg-blue-100 transition">
+                    <i class="fas fa-upload text-2xl mb-2"></i>
+                    <span class="text-sm font-semibold">Pilih Gambar dari Galeri</span>
+                </label>
+                
+                <!-- Tombol Kamera -->
+                <label id="cameraButton" class="mt-4 w-full flex flex-col items-center px-4 py-6 bg-green-50 text-green-700 rounded-lg shadow border border-green-300 cursor-pointer hover:bg-green-100 transition">
+                    <i class="fas fa-camera text-2xl mb-2"></i>
+                    <span class="text-sm font-semibold">Ambil Gambar Kamera</span>
+                </label>
+
+                <!-- Input tersembunyi -->
+                <input type="file" id="galleryInput" accept="image/*" class="hidden">
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
+                <input type="file" name="image" id="imageInput" accept="image/*" class="hidden">
+
+                <span id="fileName" class="text-gray-500 text-sm mt-2"></span>
+            </div>
+
+            <button type="submit" class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-yellow-400 text-white font-bold rounded-xl shadow hover:shadow-md hover:scale-105 transition">
+                <i class="fas fa-magic"></i> Identifikasi Sekarang
+            </button>
+        </form>
+
+        <!-- Camera View -->
+        <div id="cameraView">
+            <video id="cameraPreview" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button id="captureButton" class="bg-white rounded-full p-4 shadow-lg">
+                    <i class="fas fa-circle text-3xl text-red-500"></i>
+                </button>
+                <button id="closeCamera" class="absolute top-4 right-4 text-white bg-red-500 rounded-full p-2">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Hasil Identifikasi -->
+        <div id="resultSection" class="hidden mt-10 bg-white rounded-xl shadow-xl overflow-hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                <!-- Image Preview -->
+                <div class="relative group">
+                    <img id="resultImage" src="" alt="Preview" class="w-full h-64 object-contain rounded-xl">
+                    <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a id="enlargeLink" href="#" target="_blank" class="text-white bg-green-600 px-4 py-2 rounded-lg">
+                            <i class="fas fa-search-plus mr-2"></i> Perbesar
+                        </a>
+                    </div>
+                </div>
+                <!-- Result Detail -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-bold text-gray-800 border-l-4 border-green-500 pl-4">Hasil Identifikasi</h2>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-seedling text-green-500"></i>
+                        <div>
+                            <p class="text-sm text-gray-500">Varietas</p>
+                            <p id="varietyResult" class="text-lg font-semibold"> - </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-percent text-green-500"></i>
+                        <div>
+                            <p class="text-sm text-gray-500">Tingkat Kepercayaan</p>
+                            <p id="confidenceResult" class="text-lg font-semibold"> -% </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="debugLog" class="text-sm text-gray-600 mt-2"></div>
+
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden max-w-md mx-auto mt-6 p-4 bg-red-100 text-red-700 rounded-lg"></div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadForm = document.getElementById('uploadForm');
+            const imageInput = document.getElementById('imageInput'); // tetap yang dikirim ke backend
+            const galleryInput = document.getElementById('galleryInput');
+            const cameraInput = document.getElementById('cameraInput');
+            const fileName = document.getElementById('fileName');
+            const galleryButton = document.getElementById('galleryButton');
+            const cameraButton = document.getElementById('cameraButton');
+            const resultSection = document.getElementById('resultSection');
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = uploadForm.querySelector('button[type="submit"]');
+
+            // --- Tombol Galeri ---
+            galleryButton.addEventListener('click', () => {
+                galleryInput.click();
+            });
+
+            // --- Tombol Kamera ---
+            cameraButton.addEventListener('click', () => {
+                cameraInput.click();
+            });
+
+            // --- Fungsi set file ke imageInput ---
+            function setImageInputFile(file) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                imageInput.files = dt.files;
+            }
+
+            // --- Preview Gambar ke Result Section ---
+            function previewImage(file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('resultImage').src = e.target.result;
+                    document.getElementById('enlargeLink').href = e.target.result;
+                    resultSection.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // --- Input dari Galeri ---
+            galleryInput.addEventListener('change', function (e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    setImageInputFile(file);
+                    fileName.textContent = file.name;
+                    resultSection.classList.add('hidden');
+                    errorMessage.classList.add('hidden');
+                    previewImage(file); // ✅ preview otomatis
+                }
+            });
+
+            // --- Input dari Kamera ---
+            cameraInput.addEventListener('change', function (e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    setImageInputFile(file);
+                    fileName.textContent = file.name;
+                    resultSection.classList.add('hidden');
+                    errorMessage.classList.add('hidden');
+                    previewImage(file); // ✅ preview otomatis
+                }
+            });
+
+            // --- Fungsi Submit Form ---
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!imageInput.files || imageInput.files.length === 0) {
+                    showError('Silakan pilih atau ambil gambar terlebih dahulu.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('image', imageInput.files[0]);
+
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...';
+
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Terjadi kesalahan pada server.');
+                    }
+
+                    document.getElementById('resultImage').src = `data:image/jpeg;base64,${data.image_base64}`;
+                    document.getElementById('enlargeLink').href = `data:image/jpeg;base64,${data.image_base64}`;
+                    document.getElementById('varietyResult').textContent = `${data.variety}`;
+                    document.getElementById('confidenceResult').textContent = `${data.confidence}%`;
+                    resultSection.classList.remove('hidden');
+                    errorMessage.classList.add('hidden');
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-magic mr-2"></i>Identifikasi Sekarang';
+                }
+            });
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+                resultSection.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
